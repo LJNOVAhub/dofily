@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dofily | دوفيلي - أسرع صانع دوفيات وفواتير احترافية</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --border: #e2e8f0;
+      --muted: #64748b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 50px; }
+    
+    header { background: #ffffff; border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+    .logo { font-size: 1.35rem; font-weight: 900; color: var(--primary); display: flex; align-items: center; gap: 5px; }
+    .logo span { color: #0f172a; font-weight: 800; font-size: 1.15rem; }
+    .lang-btns button { background: #f1f5f9; border: 1px solid var(--border); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 700; }
+    .lang-btns button.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .container { max-width: 650px; margin: 20px auto; padding: 0 15px; }
+    .card { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); margin-bottom: 16px; }
+    
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px; }
+    input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; outline: none; }
+    input:focus, select:focus { border-color: var(--primary); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* Item Lines */
+    .item-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .btn-del { background: #fee2e2; color: #dc2626; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .btn-add-line { background: #f1f5f9; color: var(--primary); border: 1px dashed var(--primary); padding: 10px; border-radius: 8px; width: 100%; font-weight: 700; cursor: pointer; margin-top: 5px; font-size: 0.85rem; }
+
+    .total-box { background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 10px; padding: 15px; text-align: center; margin: 15px 0; }
+    .total-val { font-size: 1.8rem; font-weight: 900; color: var(--primary); }
+
+    .btn-main { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 10px; font-size: 1rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
+    .btn-main:hover { background: var(--primary-dark); }
+    .btn-wa { background: #25d366; }
+    .btn-wa:hover { background: #1eb956; }
+
+    /* Print Template */
+    @media print {
+      body * { visibility: hidden; }
+      #printableArea, #printableArea * { visibility: visible; }
+      #printableArea { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white; }
+      header, .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="no-print">
+    <div class="logo">⚡ Dofily <span>دوفيلي</span></div>
+    <div class="lang-btns">
+      <button class="active" onclick="setLang('darija')">دارجة</button>
+      <button onclick="setLang('ar')">عربية</button>
+      <button onclick="setLang('fr')">FR</button>
+      <button onclick="setLang('en')">EN</button>
+    </div>
+  </header>
+
+  <div class="container no-print">
+    <!-- Header Type -->
+    <div class="card">
+      <div class="grid-2">
+        <div class="form-group">
+          <label id="lbl-type">نوع الوثيقة:</label>
+          <select id="docType" onchange="calcTotal()">
+            <option value="Devis / دوفي رسمي">Devis / دوفي رسمي</option>
+            <option value="Facture / فاتورة رسمية">Facture / فاتورة رسمية</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label id="lbl-date">التاريخ:</label>
+          <input type="date" id="docDate">
+        </div>
+      </div>
+    </div>
+
+    <!-- Parties Info -->
+    <div class="card">
+      <div class="grid-2">
+        <div class="form-group">
+          <label id="lbl-myname">اسم الحرفي / الشركة ديالي:</label>
+          <input type="text" id="myName" placeholder="مثال: عزيز بلومبي إكسبريس" oninput="saveDraft()">
+        </div>
+        <div class="form-group">
+          <label id="lbl-myphone">رقم الهاتف ديالي:</label>
+          <input type="text" id="myPhone" placeholder="0600000000" oninput="saveDraft()">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label id="lbl-cname">اسم الكليان (الزبون):</label>
+          <input type="text" id="clientName" placeholder="مثال: سي كريم العلمي" oninput="saveDraft()">
+        </div>
+        <div class="form-group">
+          <label id="lbl-cphone">واتساب الكليان:</label>
+          <input type="text" id="clientPhone" placeholder="0611223344" oninput="saveDraft()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Services / Items -->
+    <div class="card">
+      <label id="lbl-items" style="font-weight:800; font-size:0.9rem; margin-bottom:10px;">السلعة والخدمات المطلوبة:</label>
+      <div id="itemsContainer"></div>
+      <button class="btn-add-line" onclick="addItemRow()">➕ إضافة خدمة أو سلعة جديدة</button>
+
+      <div class="total-box">
+        <div style="font-size:0.85rem; color:#1e40af; font-weight:700;" id="lbl-total">المجموع الإجمالي:</div>
+        <div class="total-val" id="totalDisplay">0.00 MAD</div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <button class="btn-main" onclick="exportPDF()">📄 تصدير وحفظ الوثيقة PDF فوراً</button>
+    <button class="btn-main btn-wa" onclick="sendWhatsApp()">💬 إرسال الفاتورة فـ WhatsApp للكليان</button>
+  </div>
+
+  <!-- Hidden Printable Template -->
+  <div id="printableArea" style="display:none; font-family:sans-serif;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #2563eb; padding-bottom:15px; margin-bottom:20px;">
+      <div>
+        <h1 style="color:#2563eb; font-size:24px; margin-bottom:5px;" id="p-docType">FACTURE / DEVIS</h1>
+        <p style="font-size:12px; color:#64748b;">التاريخ: <span id="p-date"></span></p>
+      </div>
+      <div style="text-align:left;">
+        <h2 style="font-size:18px; margin-bottom:4px;" id="p-myname"></h2>
+        <p style="font-size:12px; color:#64748b;">هاتف: <span id="p-myphone"></span></p>
+      </div>
+    </div>
+
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:20px;">
+      <h3 style="font-size:14px; margin-bottom:4px; color:#334155;">موجهة إلى السيد(ة):</h3>
+      <p style="font-weight:bold; font-size:16px;" id="p-clientName"></p>
+      <p style="font-size:12px; color:#64748b;">واتساب: <span id="p-clientPhone"></span></p>
+    </div>
+
+    <table style="width:100%; border-collapse:collapse; margin-bottom:20px; font-size:13px;">
+      <thead>
+        <tr style="background:#2563eb; color:white; text-align:right;">
+          <th style="padding:8px; border:1px solid #e2e8f0;">البيان / الخدمة</th>
+          <th style="padding:8px; border:1px solid #e2e8f0; width:60px;">الكمية</th>
+          <th style="padding:8px; border:1px solid #e2e8f0; width:90px;">الثمن (MAD)</th>
+          <th style="padding:8px; border:1px solid #e2e8f0; width:100px;">المجموع</th>
+        </tr>
+      </thead>
+      <tbody id="p-itemsTable"></tbody>
+    </table>
+
+    <div style="text-align:left; margin-bottom:30px;">
+      <div style="display:inline-block; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 25px; text-align:center;">
+        <span style="font-size:12px; color:#1e40af; font-weight:bold;">المجموع الواجب أداؤه:</span>
+        <div style="font-size:22px; font-weight:900; color:#2563eb;" id="p-total"></div>
+      </div>
+    </div>
+
+    <div style="border-top:1px dashed #cbd5e1; padding-top:15px; text-align:center; font-size:11px; color:#94a3b8;">
+      شكراً على ثقتكم بنا! تم إنشاء هذه الوثيقة فورياً عبر تطبيق Dofily (دوفيلي).
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('docDate').valueAsDate = new Date();
+
+    let items = JSON.parse(localStorage.getItem('dofily_items')) || [
+      { desc: 'تركيب صنبور مياه حمام + سلعة', qty: 1, price: 250 },
+      { desc: 'صيانة قنوات الصرف الصحي', qty: 1, price: 150 }
+    ];
+
+    function saveDraft() {
+      localStorage.setItem('dofily_myname', document.getElementById('myName').value);
+      localStorage.setItem('dofily_myphone', document.getElementById('myPhone').value);
+      localStorage.setItem('dofily_cname', document.getElementById('clientName').value);
+      localStorage.setItem('dofily_cphone', document.getElementById('clientPhone').value);
+      localStorage.setItem('dofily_items', JSON.stringify(items));
+    }
+
+    function loadDraft() {
+      if(localStorage.getItem('dofily_myname')) document.getElementById('myName').value = localStorage.getItem('dofily_myname');
+      if(localStorage.getItem('dofily_myphone')) document.getElementById('myPhone').value = localStorage.getItem('dofily_myphone');
+      if(localStorage.getItem('dofily_cname')) document.getElementById('clientName').value = localStorage.getItem('dofily_cname');
+      if(localStorage.getItem('dofily_cphone')) document.getElementById('clientPhone').value = localStorage.getItem('dofily_cphone');
+    }
+
+    function renderItems() {
+      const container = document.getElementById('itemsContainer');
+      container.innerHTML = '';
+      items.forEach((item, idx) => {
+        container.innerHTML += `
+          <div class="item-row">
+            <input type="text" placeholder="الخدمة أو السلعة" value="${item.desc}" oninput="updateItem(${idx}, 'desc', this.value)">
+            <input type="number" placeholder="الكمية" value="${item.qty}" min="1" oninput="updateItem(${idx}, 'qty', this.value)">
+            <input type="number" placeholder="الثمن" value="${item.price}" min="0" oninput="updateItem(${idx}, 'price', this.value)">
+            <button class="btn-del" onclick="delItem(${idx})">✕</button>
+          </div>
+        `;
+      });
+      calcTotal();
+    }
+
+    function addItemRow() {
+      items.push({ desc: '', qty: 1, price: 0 });
+      renderItems();
+      saveDraft();
+    }
+
+    function delItem(idx) {
+      items.splice(idx, 1);
+      renderItems();
+      saveDraft();
+    }
+
+    function updateItem(idx, key, val) {
+      items[idx][key] = key === 'desc' ? val : (parseFloat(val) || 0);
+      calcTotal();
+      saveDraft();
+    }
+
+    function calcTotal() {
+      const total = items.reduce((sum, item) => sum + (item.qty * item.price), 0);
+      document.getElementById('totalDisplay').innerText = total.toFixed(2) + ' MAD';
+      return total;
+    }
+
+    function exportPDF() {
+      const total = calcTotal();
+      document.getElementById('p-docType').innerText = document.getElementById('docType').value;
+      document.getElementById('p-date').innerText = document.getElementById('docDate').value;
+      document.getElementById('p-myname').innerText = document.getElementById('myName').value || 'المهني / الحرفي';
+      document.getElementById('p-myphone').innerText = document.getElementById('myPhone').value || '-';
+      document.getElementById('p-clientName').innerText = document.getElementById('clientName').value || 'الزبون المحترم';
+      document.getElementById('p-clientPhone').innerText = document.getElementById('clientPhone').value || '-';
+      document.getElementById('p-total').innerText = total.toFixed(2) + ' MAD';
+
+      const tbody = document.getElementById('p-itemsTable');
+      tbody.innerHTML = '';
+      items.forEach(item => {
+        const sub = (item.qty * item.price).toFixed(2);
+        tbody.innerHTML += `
+          <tr>
+            <td style="padding:6px; border:1px solid #cbd5e1;">${item.desc || 'خدمة'}</td>
+            <td style="padding:6px; border:1px solid #cbd5e1; text-align:center;">${item.qty}</td>
+            <td style="padding:6px; border:1px solid #cbd5e1; text-align:center;">${item.price}</td>
+            <td style="padding:6px; border:1px solid #cbd5e1; text-align:center; font-weight:bold;">${sub}</td>
+          </tr>
+        `;
+      });
+
+      document.getElementById('printableArea').style.display = 'block';
+      window.print();
+      document.getElementById('printableArea').style.display = 'none';
+    }
+
+    function sendWhatsApp() {
+      const phone = document.getElementById('clientPhone').value.replace(/[^0-9]/g, '');
+      const client = document.getElementById('clientName').value || 'الزبون المحترم';
+      const myname = document.getElementById('myName').value || 'الحرفي';
+      const type = document.getElementById('docType').value;
+      const total = calcTotal().toFixed(2);
+
+      let text = `السلام عليكم سي ${client}،\nمعاك ${myname}.\nهذا ملخص ${type}:\n`;
+      items.forEach(i => {
+        text += `- ${i.desc}: (${i.qty} x ${i.price} MAD) = ${(i.qty * i.price)} MAD\n`;
+      });
+      text += `\n*المجموع الإجمالي: ${total} MAD*\nشكراً على ثقتكم!`;
+
+      const url = `https://wa.me/${phone ? (phone.startsWith('212') ? phone : '212' + phone.substring(1)) : ''}?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    }
+
+    function setLang(lang) {
+      document.querySelectorAll('.lang-btns button').forEach(b => b.classList.remove('active'));
+      if(lang === 'darija') {
+        document.body.dir = 'rtl';
+        document.getElementById('lbl-type').innerText = 'نوع الوثيقة:';
+        document.getElementById('lbl-myname').innerText = 'اسم الحرفي / الشركة ديالي:';
+        document.getElementById('lbl-cname').innerText = 'اسم الكليان (الزبون):';
+        document.querySelectorAll('.lang-btns button')[0].classList.add('active');
+      } else if(lang === 'ar') {
+        document.body.dir = 'rtl';
+        document.getElementById('lbl-type').innerText = 'نوع المستند:';
+        document.getElementById('lbl-myname').innerText = 'اسم المنشأة / المهني:';
+        document.getElementById('lbl-cname').innerText = 'اسم العميل:';
+        document.querySelectorAll('.lang-btns button')[1].classList.add('active');
+      } else if(lang === 'fr') {
+        document.body.dir = 'ltr';
+        document.getElementById('lbl-type').innerText = 'Type de document:';
+        document.getElementById('lbl-myname').innerText = 'Mon Entreprise / Artisan:';
+        document.getElementById('lbl-cname').innerText = 'Nom du Client:';
+        document.querySelectorAll('.lang-btns button')[2].classList.add('active');
+      } else {
+        document.body.dir = 'ltr';
+        document.getElementById('lbl-type').innerText = 'Document Type:';
+        document.getElementById('lbl-myname').innerText = 'My Business / Freelancer:';
+        document.getElementById('lbl-cname').innerText = 'Client Name:';
+        document.querySelectorAll('.lang-btns button')[3].classList.add('active');
+      }
+    }
+
+    loadDraft();
+    renderItems();
+  </script>
+</body>
+</html>
