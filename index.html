@@ -19,7 +19,7 @@
     body { background-color: var(--bg); color: var(--text); padding-bottom: 70px; }
     
     header { background: #ffffff; border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
-    .logo { font-size: 1.35rem; font-weight: 900; color: var(--primary); display: flex; align-items: center; gap: 5px; }
+    .logo { font-size: 1.35rem; font-weight: 900; color: var(--primary); display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
     .logo span { color: #0f172a; font-weight: 800; font-size: 1.15rem; }
     
     .nav-btns { display: flex; gap: 8px; align-items: center; }
@@ -57,17 +57,23 @@
     .btn-wa { background: #25d366; }
     .btn-save { background: #0f172a; }
 
-    /* Archive Modal */
+    /* Modals */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 1000; justify-content: center; align-items: center; padding: 15px; }
     .modal { background: white; width: 100%; max-width: 500px; border-radius: 14px; padding: 20px; max-height: 85vh; overflow-y: auto; text-align: right; }
     .archive-item { border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
 
-    /* Print Template */
+    /* Admin Dashboard Panel */
+    .admin-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+    .stat-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
+    .stat-val { font-size: 1.2rem; font-weight: 900; color: var(--primary); }
+    .stat-lbl { font-size: 0.68rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
+
+    /* Clean Print Template */
+    #printableArea { display: none; }
     @media print {
-      body * { visibility: hidden; }
-      #printableArea, #printableArea * { visibility: visible; }
-      #printableArea { position: absolute; left: 0; top: 0; width: 100%; padding: 25px; background: white; }
-      header, .no-print { display: none !important; }
+      body { background: white !important; padding: 0 !important; }
+      .no-print, header, footer { display: none !important; }
+      #printableArea { display: block !important; width: 100% !important; padding: 15px !important; }
     }
   </style>
 </head>
@@ -82,13 +88,14 @@
     <option value="صباغة الفينيل والديكور الحديث">
     <option value="تركيب مفاتيح الكهرباء والطابلو">
     <option value="شحن غاز المكيف وصيانة التبريد">
-    <option value="تركيب وتركيب زليج الأرضية والحائط">
+    <option value="تركيب زليج الأرضية والحائط">
     <option value="أشغال الجبص البلدي والعصري">
     <option value="صيانة وإصلاح أبواب الخشب والألمنيوم">
   </datalist>
 
   <header class="no-print">
-    <div class="logo">⚡ Dofily <span>دوفيلي Pro</span></div>
+    <!-- Secret 3-Click Trigger on Logo -->
+    <div class="logo" onclick="handleAdminLogoClick()" title="Dofily Pro">⚡ Dofily <span>دوفيلي Pro</span></div>
     <div class="nav-btns">
       <button class="btn-archive-nav" onclick="openArchiveModal()">📂 الأرشيف</button>
       <div class="lang-btns">
@@ -106,15 +113,15 @@
     <div class="card">
       <div class="grid-3">
         <div class="form-group">
-          <label id="lbl-type">نوع الوثيقة:</label>
+          <label>نوع الوثيقة:</label>
           <select id="docType">
             <option value="Devis / دوفي رسمي">Devis / دوفي رسمي</option>
             <option value="Facture / فاتورة رسمية">Facture / فاتورة رسمية</option>
           </select>
         </div>
         <div class="form-group">
-          <label id="lbl-currency">العملة المعتمدة:</label>
-          <select id="docCurrency" onchange="calcTotal()">
+          <label>العملة المعتمدة:</label>
+          <select id="docCurrency" onchange="onCurrencyChange()">
             <option value="MAD">درهم (MAD)</option>
             <option value="EUR">أورو (€)</option>
             <option value="USD">دولار ($)</option>
@@ -122,34 +129,34 @@
           </select>
         </div>
         <div class="form-group">
-          <label id="lbl-date">التاريخ:</label>
+          <label>التاريخ:</label>
           <input type="date" id="docDate">
         </div>
       </div>
     </div>
 
-    <!-- 2. Artisan Info & Brand (Logo & Cachet) -->
+    <!-- 2. Artisan Info & Brand (Logo & Cachet with Auto-Compressor) -->
     <div class="card">
       <div class="card-title">معلومات المهني / الحرفي (المُرسِل):</div>
       <div class="grid-2">
         <div class="form-group">
-          <label id="lbl-myname">اسم الحرفي / الشركة:</label>
+          <label>اسم الحرفي / الشركة:</label>
           <input type="text" id="myName" placeholder="مثال: عزيز تريسيان وكليماتيزاسيون" oninput="saveDraft()">
         </div>
         <div class="form-group">
-          <label id="lbl-myphone">رقم الهاتف:</label>
+          <label>رقم الهاتف:</label>
           <input type="text" id="myPhone" placeholder="0600000000" oninput="saveDraft()">
         </div>
       </div>
       <div class="grid-2">
         <div class="upload-box" onclick="document.getElementById('logoInput').click()">
           <span id="logoText">🖼️ إضافة لوغو / شعار الشركة</span>
-          <input type="file" id="logoInput" accept="image/*" style="display:none;" onchange="handleImageUpload(event, 'logoPreview', 'logoText')">
+          <input type="file" id="logoInput" accept="image/*" style="display:none;" onchange="handleCompressedImageUpload(event, 'logoPreview', 'logoText', 'dofily_logo')">
           <img id="logoPreview" alt="Logo">
         </div>
         <div class="upload-box" onclick="document.getElementById('cachetInput').click()">
           <span id="cachetText">🖋️ إضافة الكاشي / التوقيع</span>
-          <input type="file" id="cachetInput" accept="image/*" style="display:none;" onchange="handleImageUpload(event, 'cachetPreview', 'cachetText')">
+          <input type="file" id="cachetInput" accept="image/*" style="display:none;" onchange="handleCompressedImageUpload(event, 'cachetPreview', 'cachetText', 'dofily_cachet')">
           <img id="cachetPreview" alt="Cachet">
         </div>
       </div>
@@ -165,11 +172,11 @@
       </div>
       <div class="grid-2">
         <div class="form-group">
-          <label id="lbl-cname">اسم الكليان:</label>
+          <label>اسم الكليان:</label>
           <input type="text" id="clientName" placeholder="مثال: سي كريم العلمي" oninput="saveDraft()">
         </div>
         <div class="form-group">
-          <label id="lbl-cphone">واتساب الكليان:</label>
+          <label>واتساب الكليان:</label>
           <input type="text" id="clientPhone" placeholder="0611223344" oninput="saveDraft()">
         </div>
       </div>
@@ -195,15 +202,15 @@
 
     <!-- Actions -->
     <div class="actions-grid">
-      <button class="btn-main" onclick="exportPDF()">📄 تصدير ورقة PDF</button>
+      <button class="btn-main" onclick="exportPDF()">📄 تصدير وحفظ ورقة PDF</button>
       <button class="btn-main btn-wa" onclick="sendWhatsApp()">💬 إرسال فـ WhatsApp</button>
     </div>
     <button class="btn-main btn-save" onclick="saveToArchive()">💾 حفظ نسخة فـ الأرشيف</button>
 
   </div>
 
-  <!-- Hidden Printable Official PDF View -->
-  <div id="printableArea" style="display:none; font-family:sans-serif; color:#0f172a;">
+  <!-- Printable Official PDF View -->
+  <div id="printableArea">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #2563eb; padding-bottom:15px; margin-bottom:20px;">
       <div>
         <h1 style="color:#2563eb; font-size:24px; margin-bottom:4px;" id="p-docType">DEVIS / FACTURE</h1>
@@ -230,8 +237,8 @@
         <tr style="background:#2563eb; color:white; text-align:right;">
           <th style="padding:8px; border:1px solid #cbd5e1;">البيان / الخدمة</th>
           <th style="padding:8px; border:1px solid #cbd5e1; width:60px; text-align:center;">الكمية</th>
-          <th style="padding:8px; border:1px solid #cbd5e1; width:90px; text-align:center;" id="p-th-price">الثمن</th>
-          <th style="padding:8px; border:1px solid #cbd5e1; width:100px; text-align:center;" id="p-th-sub">المجموع</th>
+          <th style="padding:8px; border:1px solid #cbd5e1; width:90px; text-align:center;">الثمن</th>
+          <th style="padding:8px; border:1px solid #cbd5e1; width:100px; text-align:center;">المجموع</th>
         </tr>
       </thead>
       <tbody id="p-itemsTable"></tbody>
@@ -257,7 +264,7 @@
       </div>
     </div>
 
-    <div style="border-top:1px dashed #cbd5e1; padding-top:12px; text-align:center; font-size:11px; color:#94a3b8;">
+    <div id="p-watermark" style="border-top:1px dashed #cbd5e1; padding-top:12px; text-align:center; font-size:11px; color:#94a3b8;">
       شكراً على تعاملكم معنا! تم إصدار هذه الوثيقة عبر منصة Dofily Pro.
     </div>
   </div>
@@ -265,11 +272,42 @@
   <!-- Archive Modal -->
   <div class="modal-overlay" id="archiveModal">
     <div class="modal">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="font-size:1.15rem; font-weight:800;">📂 أرشيف الدوفيات والفواتير السابقة</h3>
-      </div>
+      <h3 style="font-size:1.15rem; font-weight:800; margin-bottom:15px;">📂 أرشيف الدوفيات والفواتير السابقة</h3>
       <div id="archiveList"></div>
       <button class="btn-main" style="background:#0f172a; margin-top:10px;" onclick="closeArchiveModal()">إغلاق</button>
+    </div>
+  </div>
+
+  <!-- SECRET EXECUTIVE ADMIN MODAL -->
+  <div class="modal-overlay" id="adminModal">
+    <div class="modal" style="max-width: 480px;">
+      <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom:12px;">🔐 لوحة إدارة Dofily (Executive Admin)</h3>
+      
+      <div class="admin-stats">
+        <div class="stat-card">
+          <div class="stat-val" id="adminTotalVolume">0</div>
+          <div class="stat-lbl">إجمالي المعاملات</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="adminArchiveCount">0</div>
+          <div class="stat-lbl">الدوفيات المحفوظة</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="adminClientsCount">0</div>
+          <div class="stat-lbl">الزبناء فـ CRM</div>
+        </div>
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:12px; text-align:right; margin-bottom:15px; font-size:0.85rem;">
+        <strong>⚙️ التحكم فـ النسخة:</strong>
+        <p style="color:#64748b; font-size:0.75rem; margin:4px 0 8px;">العلامة المائية فـ أسفل الـ PDF:</p>
+        <button id="toggleWatermarkBtn" style="background:#059669; color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="toggleWatermark()">
+          وضع Pro VIP نشط (العلامة مخفية)
+        </button>
+      </div>
+
+      <button class="btn-main" style="background:#dc2626; font-size:0.8rem; padding:8px;" onclick="resetAllAppData()">⚠️ مسح جميع البيانات والبدء من الصفر</button>
+      <button class="btn-main" style="background:#0f172a; margin-top:8px;" onclick="closeAdminModal()">إغلاق لوحة الإدارة</button>
     </div>
   </div>
 
@@ -278,6 +316,7 @@
 
     let logoDataUrl = localStorage.getItem('dofily_logo') || '';
     let cachetDataUrl = localStorage.getItem('dofily_cachet') || '';
+    let hideWatermark = localStorage.getItem('dofily_hide_watermark') === 'true';
 
     if (logoDataUrl) {
       document.getElementById('logoPreview').src = logoDataUrl;
@@ -298,20 +337,37 @@
     let savedClients = JSON.parse(localStorage.getItem('dofily_clients')) || [];
     let archive = JSON.parse(localStorage.getItem('dofily_archive')) || [];
 
-    function handleImageUpload(e, imgId, textId) {
+    // Auto Image Compressor (Canvas-based to avoid LocalStorage overflow)
+    function handleCompressedImageUpload(e, imgId, textId, storageKey) {
       const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-          const res = evt.target.result;
-          document.getElementById(imgId).src = res;
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const maxDim = 320;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+            else { w = Math.round((w * maxDim) / h); h = maxDim; }
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const compressed = canvas.toDataURL('image/png', 0.8);
+
+          document.getElementById(imgId).src = compressed;
           document.getElementById(imgId).style.display = 'block';
           document.getElementById(textId).style.display = 'none';
-          if (imgId === 'logoPreview') localStorage.setItem('dofily_logo', res);
-          if (imgId === 'cachetPreview') localStorage.setItem('dofily_cachet', res);
+          localStorage.setItem(storageKey, compressed);
         };
-        reader.readAsDataURL(file);
-      }
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
     }
 
     function saveDraft() {
@@ -356,7 +412,7 @@
       items.forEach((item, idx) => {
         container.innerHTML += `
           <div class="item-row">
-            <input type="text" list="servicesList" placeholder="اكتب الخدمة أو اخترها..." value="${item.desc}" oninput="updateItem(${idx}, 'desc', this.value)">
+            <input type="text" list="servicesList" placeholder="الخدمة أو السلعة" value="${item.desc}" oninput="updateItem(${idx}, 'desc', this.value)">
             <input type="number" placeholder="الكمية" value="${item.qty}" min="1" oninput="updateItem(${idx}, 'qty', this.value)">
             <input type="number" placeholder="الثمن (${curr})" value="${item.price}" min="0" oninput="updateItem(${idx}, 'price', this.value)">
             <button class="btn-del" onclick="delItem(${idx})">✕</button>
@@ -364,6 +420,10 @@
         `;
       });
       calcTotal();
+    }
+
+    function onCurrencyChange() {
+      renderItems();
     }
 
     function addItemRow() {
@@ -411,6 +471,8 @@
       const savedCachet = localStorage.getItem('dofily_cachet');
       if (savedCachet) { pCachet.src = savedCachet; pCachet.style.display = 'block'; } else { pCachet.style.display = 'none'; }
 
+      document.getElementById('p-watermark').style.display = hideWatermark ? 'none' : 'block';
+
       const tbody = document.getElementById('p-itemsTable');
       tbody.innerHTML = '';
       items.forEach(item => {
@@ -425,9 +487,7 @@
         `;
       });
 
-      document.getElementById('printableArea').style.display = 'block';
       window.print();
-      document.getElementById('printableArea').style.display = 'none';
     }
 
     function sendWhatsApp() {
@@ -435,7 +495,6 @@
       const client = document.getElementById('clientName').value || 'صاحبي';
       const { total, curr } = calcTotal();
 
-      // Save client to CRM
       if (client && phone) {
         if (!savedClients.some(c => c.phone === phone)) {
           savedClients.push({ name: client, phone: phone });
@@ -444,7 +503,6 @@
         }
       }
 
-      // Authentic Darija message
       let text = `السلام عليكم سي ${client}،\nهاداك هو الدوفي ديال الخدمة لي تفقنا عليها، المجموع هو ${total.toFixed(2)} ${curr}.\nالله يسر الأمور!\n\nتفاصيل الخدمات:\n`;
       items.forEach(i => {
         text += `• ${i.desc}: (${i.qty} x ${i.price} ${curr})\n`;
@@ -463,6 +521,7 @@
         type: document.getElementById('docType').value,
         client: client,
         phone: document.getElementById('clientPhone').value,
+        totalNum: total,
         total: total.toFixed(2) + ' ' + curr,
         items: JSON.parse(JSON.stringify(items))
       };
@@ -517,6 +576,76 @@
         archive.splice(idx, 1);
         localStorage.setItem('dofily_archive', JSON.stringify(archive));
         openArchiveModal();
+      }
+    }
+
+    /* SECRET EXECUTIVE ADMIN DASHBOARD */
+    let adminClicks = 0;
+    let adminTimer = null;
+    function handleAdminLogoClick() {
+      adminClicks++;
+      clearTimeout(adminTimer);
+      if (adminClicks >= 3) {
+        adminClicks = 0;
+        openAdminAuth();
+      } else {
+        adminTimer = setTimeout(() => { adminClicks = 0; }, 800);
+      }
+    }
+
+    window.addEventListener('hashchange', () => {
+      if (window.location.hash === '#admin') {
+        openAdminAuth();
+        history.replaceState(null, null, window.location.pathname);
+      }
+    });
+    if (window.location.hash === '#admin') {
+      openAdminAuth();
+      history.replaceState(null, null, window.location.pathname);
+    }
+
+    function openAdminAuth() {
+      const pass = prompt("🔐 لوحة التحكم السرية للمدير:\nأدخل الرمز السري (Default: 2026):");
+      if (pass === "2026") {
+        const totalVol = archive.reduce((sum, a) => sum + (a.totalNum || 0), 0);
+        document.getElementById('adminTotalVolume').innerText = totalVol.toFixed(0);
+        document.getElementById('adminArchiveCount').innerText = archive.length;
+        document.getElementById('adminClientsCount').innerText = savedClients.length;
+
+        updateWatermarkBtnText();
+        document.getElementById('adminModal').style.display = 'flex';
+      } else if (pass !== null) {
+        alert("❌ الرمز السري خاطئ!");
+      }
+    }
+
+    function closeAdminModal() {
+      document.getElementById('adminModal').style.display = 'none';
+    }
+
+    function toggleWatermark() {
+      hideWatermark = !hideWatermark;
+      localStorage.setItem('dofily_hide_watermark', hideWatermark.toString());
+      updateWatermarkBtnText();
+      alert(hideWatermark ? "✅ تم تفعيل وضع Pro VIP (تم إخفاء العلامة المائية فـ PDF)" : "تمت إعادة إظهار العلامة المائية.");
+    }
+
+    function updateWatermarkBtnText() {
+      const btn = document.getElementById('toggleWatermarkBtn');
+      if (hideWatermark) {
+        btn.innerText = "وضع Pro VIP نشط (العلامة مخفية) ✅";
+        btn.style.background = "#059669";
+      } else {
+        btn.innerText = "الوضع المجاني (العلامة تظهر) ℹ️";
+        btn.style.background = "#2563eb";
+      }
+    }
+
+    function resetAllAppData() {
+      if (confirm("⚠️ تحذير: واش متأكد باغي تمسح كاع البيانات المخزنة وتبدأ التطبيق من الصفر؟")) {
+        localStorage.clear();
+        alert("تم مسح جميع البيانات بنجاح!");
+        location.reload();
       }
     }
 
